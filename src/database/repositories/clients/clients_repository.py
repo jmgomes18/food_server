@@ -1,5 +1,5 @@
 import logging
-from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.exc import InvalidRequestError, NoResultFound
 from src.database.entities import Clients
 from src.database.config import DBConnectionHandler
 
@@ -26,13 +26,19 @@ class ClientsRepository:
             except InvalidRequestError as e:
                 logger.error('crashed inserting data')
                 conn.session.rollback()
-                raise
+                raise e
             finally:
                 conn.session.close()
 
     @classmethod
-    def select():
-        pass
+    def select_all(cls):
+        with DBConnectionHandler as conn:
+            try:
+                return conn.session.query(Clients).all()
+            except NoResultFound as e:
+                raise e('Sorry, no results found', 204)
+            finally:
+                conn.session.close()
 
     @classmethod
     def delete(id):
